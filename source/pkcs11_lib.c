@@ -431,7 +431,7 @@ static CK_FUNCTION_LIST_PTR s_function_list = NULL;
 
 void aws_pkcs11_lib_finalize(){
     if(s_function_list != NULL) {
-        s_function_list->C_Finalize(NULL);
+    //    s_function_list->C_Finalize(NULL);
     }
 }
 
@@ -446,17 +446,19 @@ static void s_pkcs11_lib_destroy(void *user_data) {
         (void *)pkcs11_lib,
         pkcs11_lib->finalize_on_cleanup ? "yes" : "omit");
 
-    if (pkcs11_lib->finalize_on_cleanup) {
-        CK_RV rv = pkcs11_lib->function_list->C_Finalize(NULL);
-        if (rv != CKR_OK) {
-            /* Log about it, but continue cleaning up */
-            s_raise_ck_error(pkcs11_lib, "C_Finalize", rv);
-        }
+    CK_RV rv = pkcs11_lib->function_list->C_Finalize(NULL);
+    if (rv != CKR_OK) {
+        /* Log about it, but continue cleaning up */
+        s_raise_ck_error(pkcs11_lib, "C_Finalize", rv);
     }
+
 
     aws_shared_library_clean_up(&pkcs11_lib->shared_lib);
     aws_mem_release(pkcs11_lib->allocator, pkcs11_lib);
 }
+
+static struct aws_pkcs11_lib *s_pkcs11_lib = NULL;
+
 
 struct aws_pkcs11_lib *aws_pkcs11_lib_new(
     struct aws_allocator *allocator,
@@ -473,7 +475,9 @@ struct aws_pkcs11_lib *aws_pkcs11_lib_new(
             aws_raise_error(AWS_ERROR_INVALID_ARGUMENT);
             return NULL;
     }
-
+    if(s_pkcs11_lib != NULL) {
+        return aws_ref_count_acquire(s_pkcs11_lib);
+    }
     /* Create the struct */
     struct aws_pkcs11_lib *pkcs11_lib = aws_mem_calloc(allocator, 1, sizeof(struct aws_pkcs11_lib));
     aws_ref_count_init(&pkcs11_lib->ref_count, pkcs11_lib, s_pkcs11_lib_destroy);
@@ -553,6 +557,7 @@ struct aws_pkcs11_lib *aws_pkcs11_lib_new(
                 goto error;
             }
         }
+        s_pkcs11_lib = pkcs11_lib;
         s_function_list = pkcs11_lib->function_list;
         init_logging_str = aws_pkcs11_ckr_str(rv);
 
@@ -829,6 +834,7 @@ int aws_pkcs11_lib_login_user(
     }
     return AWS_OP_SUCCESS;
 }
+
 
 /**
  * Find the object that meets all criteria:
