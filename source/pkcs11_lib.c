@@ -438,13 +438,14 @@ static void s_pkcs11_lib_destroy(void *user_data) {
         (void *)pkcs11_lib,
         pkcs11_lib->finalize_on_cleanup ? "yes" : "omit");
 
-    CK_RV rv = pkcs11_lib->function_list->C_Finalize(NULL);
-    if (rv != CKR_OK) {
-        /* Log about it, but continue cleaning up */
-        s_raise_ck_error(pkcs11_lib, "C_Finalize", rv);
+    if (pkcs11_lib->finalize_on_cleanup) {
+        CK_RV rv = pkcs11_lib->function_list->C_Finalize(NULL);
+        if (rv != CKR_OK) {
+            /* Log about it, but continue cleaning up */
+            s_raise_ck_error(pkcs11_lib, "C_Finalize", rv);
+        }
     }
-
-    aws_shared_library_clean_up(&pkcs11_lib->shared_lib);
+    //aws_shared_library_clean_up(&pkcs11_lib->shared_lib);
     aws_mem_release(pkcs11_lib->allocator, pkcs11_lib);
 }
 
