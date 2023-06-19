@@ -76,6 +76,8 @@ struct aws_pkcs11_lib *aws_pkcs11_lib_new(
     struct aws_allocator *allocator,
     const struct aws_pkcs11_lib_options *options);
 
+AWS_IO_API
+void aws_pkcs11_lib_finalize();
 /**
  * Acquire a reference to a PKCS#11 library, preventing it from being cleaned up.
  * You must call aws_pkcs11_lib_release() when you are done with it.

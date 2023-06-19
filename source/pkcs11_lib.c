@@ -427,6 +427,14 @@ struct aws_pkcs11_lib {
     bool finalize_on_cleanup;
 };
 
+static CK_FUNCTION_LIST_PTR s_function_list = NULL;
+
+void aws_pkcs11_lib_finalize(){
+    if(s_function_list != NULL) {
+        s_function_list->C_Finalize(NULL);
+    }
+}
+
 /* Invoked when last ref-count is released. Free all resources.
  * Note that this is also called if initialization fails half-way through */
 static void s_pkcs11_lib_destroy(void *user_data) {
@@ -545,7 +553,7 @@ struct aws_pkcs11_lib *aws_pkcs11_lib_new(
                 goto error;
             }
         }
-
+        s_function_list = pkcs11_lib->function_list;
         init_logging_str = aws_pkcs11_ckr_str(rv);
 
         if (options->initialize_finalize_behavior == AWS_PKCS11_LIB_STRICT_INITIALIZE_FINALIZE) {

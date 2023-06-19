@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0.
  */
 #include <aws/io/io.h>
-
+#include <aws/io/pkcs11.h>
 #include <aws/io/logging.h>
 
 #include <aws/cal/cal.h>
@@ -366,6 +366,7 @@ void aws_io_library_clean_up(void) {
         aws_tls_clean_up_static_state();
         aws_unregister_error_info(&s_list);
         aws_unregister_log_subject_info_list(&s_io_log_subject_list);
+        aws_pkcs11_lib_finalize();
         aws_cal_library_clean_up();
         aws_common_library_clean_up();
     }
