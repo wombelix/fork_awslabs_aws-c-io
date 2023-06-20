@@ -477,7 +477,7 @@ struct aws_pkcs11_lib *aws_pkcs11_lib_new(
             return NULL;
     }
     if(s_pkcs11_lib != NULL) {
-        return aws_ref_count_acquire(s_pkcs11_lib);
+        return aws_pkcs11_lib_acquire(s_pkcs11_lib);
     }
     /* Create the struct */
     struct aws_pkcs11_lib *pkcs11_lib = aws_mem_calloc(allocator, 1, sizeof(struct aws_pkcs11_lib));
