@@ -429,9 +429,9 @@ struct aws_pkcs11_lib {
 
 static CK_FUNCTION_LIST_PTR s_function_list = NULL;
 
-void aws_pkcs11_lib_finalize(){
-    if(s_function_list != NULL) {
-    //    s_function_list->C_Finalize(NULL);
+void aws_pkcs11_lib_finalize(void) {
+    if (s_function_list != NULL) {
+        //    s_function_list->C_Finalize(NULL);
     }
 }
 static struct aws_pkcs11_lib *s_pkcs11_lib = NULL;
@@ -453,13 +453,10 @@ static void s_pkcs11_lib_destroy(void *user_data) {
         s_raise_ck_error(pkcs11_lib, "C_Finalize", rv);
     }
 
-
     aws_shared_library_clean_up(&pkcs11_lib->shared_lib);
     aws_mem_release(pkcs11_lib->allocator, pkcs11_lib);
     s_pkcs11_lib = NULL;
 }
-
-
 
 struct aws_pkcs11_lib *aws_pkcs11_lib_new(
     struct aws_allocator *allocator,
@@ -476,7 +473,7 @@ struct aws_pkcs11_lib *aws_pkcs11_lib_new(
             aws_raise_error(AWS_ERROR_INVALID_ARGUMENT);
             return NULL;
     }
-    if(s_pkcs11_lib != NULL) {
+    if (s_pkcs11_lib != NULL) {
         return aws_pkcs11_lib_acquire(s_pkcs11_lib);
     }
     /* Create the struct */
@@ -835,7 +832,6 @@ int aws_pkcs11_lib_login_user(
     }
     return AWS_OP_SUCCESS;
 }
-
 
 /**
  * Find the object that meets all criteria:
