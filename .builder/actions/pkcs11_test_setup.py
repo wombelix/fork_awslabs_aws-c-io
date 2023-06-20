@@ -20,6 +20,10 @@ class Pkcs11TestSetup(Builder.Action):
         if not env.project.needs_tests(env):
             print("Skipping PKCS#11 setup because tests disabled for project")
             return
+
+        # set cmake flag so PKCS#11 tests are enabled
+        env.project.config['cmake_args'].append('-DENABLE_PKCS11_TESTS=ON')
+
         return Builder.Script([
             Builder.SetupCrossCICrtEnvironment()
         ])
