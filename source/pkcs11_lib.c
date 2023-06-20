@@ -427,13 +427,6 @@ struct aws_pkcs11_lib {
     bool finalize_on_cleanup;
 };
 
-static CK_FUNCTION_LIST_PTR s_function_list = NULL;
-
-void aws_pkcs11_lib_finalize(void) {
-    if (s_function_list != NULL) {
-        //    s_function_list->C_Finalize(NULL);
-    }
-}
 static struct aws_pkcs11_lib *s_pkcs11_lib = NULL;
 
 /* Invoked when last ref-count is released. Free all resources.
@@ -473,9 +466,12 @@ struct aws_pkcs11_lib *aws_pkcs11_lib_new(
             aws_raise_error(AWS_ERROR_INVALID_ARGUMENT);
             return NULL;
     }
-    if (s_pkcs11_lib != NULL) {
+
+    /* Return the cached version if present */
+    if (s_pkcs11_lib != NULL && options->initialize_finalize_behavior != AWS_PKCS11_LIB_STRICT_INITIALIZE_FINALIZE) {
         return aws_pkcs11_lib_acquire(s_pkcs11_lib);
     }
+
     /* Create the struct */
     struct aws_pkcs11_lib *pkcs11_lib = aws_mem_calloc(allocator, 1, sizeof(struct aws_pkcs11_lib));
     aws_ref_count_init(&pkcs11_lib->ref_count, pkcs11_lib, s_pkcs11_lib_destroy);
@@ -556,7 +552,6 @@ struct aws_pkcs11_lib *aws_pkcs11_lib_new(
             }
         }
         s_pkcs11_lib = pkcs11_lib;
-        s_function_list = pkcs11_lib->function_list;
         init_logging_str = aws_pkcs11_ckr_str(rv);
 
         if (options->initialize_finalize_behavior == AWS_PKCS11_LIB_STRICT_INITIALIZE_FINALIZE) {
