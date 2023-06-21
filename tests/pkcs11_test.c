@@ -384,7 +384,7 @@ static int s_pkcs11_softhsm_create_slot(
 static void s_pkcs11_tester_clean_up(void) {
     aws_pkcs11_lib_release(s_pkcs11_tester.lib);
     s_pkcs11_tester.lib = NULL;
-    s_pkcs11_clear_softhsm();
+    // s_pkcs11_clear_softhsm();
     aws_string_destroy(s_pkcs11_tester.shared_lib_path);
     aws_string_destroy(s_pkcs11_tester.token_dir);
     AWS_ZERO_STRUCT(s_pkcs11_tester);
