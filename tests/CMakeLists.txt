@@ -206,6 +206,7 @@ if(NOT BYO_CRYPTO)
     # Misc non-badssl tls tests
     add_net_test_case(test_concurrent_cert_import)
     add_test_case(tls_channel_echo_and_backpressure_test)
+    add_test_case(tls_channel_s2n_blocked_test)
     add_net_test_case(tls_client_channel_negotiation_error_socket_closed)
     add_net_test_case(tls_client_channel_negotiation_success)
     add_net_test_case(tls_server_multiple_connections)
