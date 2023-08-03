@@ -70,7 +70,7 @@ static int s_tls_server_opt_tester_init(
     ASSERT_SUCCESS(
         aws_tls_ctx_options_init_default_server_from_path(&tester->ctx_options, allocator, cert_path, pkey_path));
     ASSERT_SUCCESS(
-        aws_tls_ctx_options_override_default_trust_store_from_path(&tester->ctx_options, NULL, "/home/waqarak/work/aws-c-crt/aws-c-io/tests/resources/ca_root.crt"));
+        aws_tls_ctx_options_override_default_trust_store_from_path(&tester->ctx_options, NULL, "/home/ubuntu/work/aws-c-crt/aws-c-io/tests/resources/ca_root.crt"));
 #    endif /* __APPLE__ */
 
     aws_tls_ctx_options_set_alpn_list(&tester->ctx_options, "h2;http/1.1");
@@ -92,10 +92,10 @@ static int s_tls_client_opt_tester_init(
 
 #    ifdef __APPLE__
     ASSERT_SUCCESS(
-        aws_tls_ctx_options_override_default_trust_store_from_path(&tester->ctx_options, NULL, "/home/waqarak/work/aws-c-crt/aws-c-io/tests/resources/unittests.crt"));
+        aws_tls_ctx_options_override_default_trust_store_from_path(&tester->ctx_options, NULL, "/home/ubuntu/work/aws-c-crt/aws-c-io/tests/resources/unittests.crt"));
 #    else
     ASSERT_SUCCESS(
-        aws_tls_ctx_options_override_default_trust_store_from_path(&tester->ctx_options, NULL, "/home/waqarak/work/aws-c-crt/aws-c-io/tests/resources/ca_root.crt"));
+        aws_tls_ctx_options_override_default_trust_store_from_path(&tester->ctx_options, NULL, "/home/ubuntu/work/aws-c-crt/aws-c-io/tests/resources/ca_root.crt"));
 #    endif /* __APPLE__ */
 
     tester->ctx = aws_tls_client_ctx_new(allocator, &tester->ctx_options);
@@ -663,7 +663,7 @@ AWS_TEST_CASE(tls_channel_echo_and_backpressure_test, s_tls_channel_echo_and_bac
 
 static int s_tls_channel_s2n_blocked_test_fn(struct aws_allocator *allocator, void *ctx) {
     (void)ctx;
-        aws_io_library_init(allocator);
+       aws_io_library_init(allocator);
     ASSERT_SUCCESS(s_tls_common_tester_init(allocator, &c_tester));
 
     struct aws_byte_buf read_tag = aws_byte_buf_from_c_str("I'm a little teapot.");
@@ -692,7 +692,7 @@ static int s_tls_channel_s2n_blocked_test_fn(struct aws_allocator *allocator, vo
 
     struct tls_local_server_tester local_server_tester;
     ASSERT_SUCCESS(s_tls_local_server_tester_init(
-        allocator, &local_server_tester, &incoming_args, &c_tester, true, "/home/waqarak/work/aws-c-crt/aws-c-io/tests/resources/server.crt", "/home/waqarak/work/aws-c-crt/aws-c-io/tests/resources/server.key"));
+        allocator, &local_server_tester, &incoming_args, &c_tester, true, "server.crt", "server.key"));
     /* make the windows small to make sure back pressure is honored. */
     struct aws_channel_handler *outgoing_rw_handler = rw_handler_new(
         allocator, s_tls_test_handle_read, s_tls_test_handle_write, true, read_tag.len / 2, &outgoing_rw_args);
@@ -775,7 +775,6 @@ static int s_tls_channel_s2n_blocked_test_fn(struct aws_allocator *allocator, vo
 #    endif
 
     ASSERT_FALSE(outgoing_args.error_invoked);
-
     /* Do the IO operations */
     //rw_handler_write(outgoing_args.rw_handler, outgoing_args.rw_slot, &write_tag);
     rw_handler_write(incoming_args.rw_handler, incoming_args.rw_slot, &read_tag);
@@ -786,14 +785,14 @@ static int s_tls_channel_s2n_blocked_test_fn(struct aws_allocator *allocator, vo
         &c_tester.condition_variable, &c_tester.mutex, s_tls_test_read_predicate, &outgoing_rw_args));
     ASSERT_SUCCESS(aws_mutex_unlock(&c_tester.mutex));
 
-    incoming_rw_args.invocation_happened = false;
-    //outgoing_rw_args.invocation_happened = false;
+    //incoming_rw_args.invocation_happened = false;
+    outgoing_rw_args.invocation_happened = false;
 
     ASSERT_INT_EQUALS(1, outgoing_rw_args.read_invocations);
     //ASSERT_INT_EQUALS(1, incoming_rw_args.read_invocations);
 
     /* Go ahead and verify back-pressure works*/
-    rw_handler_trigger_increment_read_window(incoming_args.rw_handler, incoming_args.rw_slot, 100);
+    //rw_handler_trigger_increment_read_window(incoming_args.rw_handler, incoming_args.rw_slot, 100);
     rw_handler_trigger_increment_read_window(outgoing_args.rw_handler, outgoing_args.rw_slot, 100);
 
     ASSERT_SUCCESS(aws_mutex_lock(&c_tester.mutex));
@@ -823,8 +822,8 @@ static int s_tls_channel_s2n_blocked_test_fn(struct aws_allocator *allocator, vo
     /*no shutdown on the client necessary here (it should have been triggered by shutting down the other side). just
      * wait for the event to fire. */
     ASSERT_SUCCESS(aws_mutex_lock(&c_tester.mutex));
-    // ASSERT_SUCCESS(aws_condition_variable_wait_pred(
-    //     &c_tester.condition_variable, &c_tester.mutex, s_tls_channel_shutdown_predicate, &outgoing_args));
+    ASSERT_SUCCESS(aws_condition_variable_wait_pred(
+        &c_tester.condition_variable, &c_tester.mutex, s_tls_channel_shutdown_predicate, &outgoing_args));
     aws_server_bootstrap_destroy_socket_listener(local_server_tester.server_bootstrap, local_server_tester.listener);
     ASSERT_SUCCESS(aws_condition_variable_wait_pred(
         &c_tester.condition_variable, &c_tester.mutex, s_tls_listener_destroy_predicate, &incoming_args));
@@ -1057,7 +1056,7 @@ static int s_tls_client_channel_negotiation_error_untrusted_root_due_to_ca_overr
     void *ctx) {
     (void)ctx;
 
-    return s_verify_negotiation_fails_with_ca_override(allocator, s_amazon_host_name, "/home/waqarak/work/aws-c-crt/aws-c-io/tests/resources/ca_root.crt");
+    return s_verify_negotiation_fails_with_ca_override(allocator, s_amazon_host_name, "/home/ubuntu/work/aws-c-crt/aws-c-io/tests/resources/ca_root.crt");
 }
 
 AWS_TEST_CASE(
@@ -1895,7 +1894,7 @@ static int s_tls_channel_statistics_test(struct aws_allocator *allocator, void *
 
     struct tls_local_server_tester local_server_tester;
     ASSERT_SUCCESS(s_tls_local_server_tester_init(
-        allocator, &local_server_tester, &incoming_args, &c_tester, false, "/home/waqarak/work/aws-c-crt/aws-c-io/tests/resources/server.crt", "/home/waqarak/work/aws-c-crt/aws-c-io/tests/resources/server.key"));
+        allocator, &local_server_tester, &incoming_args, &c_tester, false, "/home/ubuntu/work/aws-c-crt/aws-c-io/tests/resources/server.crt", "/home/ubuntu/work/aws-c-crt/aws-c-io/tests/resources/server.key"));
 
     struct aws_channel_handler *outgoing_rw_handler =
         rw_handler_new(allocator, s_tls_test_handle_read, s_tls_test_handle_write, true, 10000, &outgoing_rw_args);
