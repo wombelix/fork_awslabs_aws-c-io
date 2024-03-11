@@ -504,6 +504,7 @@ int aws_tls_client_handler_start_negotiation(struct aws_channel_handler *handler
     if (aws_channel_thread_is_callers_thread(secure_transport_handler->parent_slot->channel)) {
         return s_drive_negotiation(handler);
     }
+    AWS_FATAL_ASSERT(0 && "waahm7: this got hit");
 
     struct aws_channel_task *negotiation_task = aws_mem_acquire(handler->alloc, sizeof(struct aws_task));
 
