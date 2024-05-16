@@ -97,6 +97,7 @@ static int s_socket_process_write_message(
         return aws_raise_error(AWS_IO_SOCKET_CLOSED);
     }
 
+    printf("aws socket write\n");
     struct aws_byte_cursor cursor = aws_byte_cursor_from_buf(&message->message_data);
     if (aws_socket_write(socket_handler->socket, &cursor, s_on_socket_write_complete, message)) {
         return AWS_OP_ERR;
@@ -139,22 +140,28 @@ static void s_do_read(struct socket_handler *socket_handler) {
 
     size_t total_read = 0;
     size_t read = 0;
+    printf(" reading more shutdown in progress %d\n ", socket_handler->shutdown_in_progress);
     while (total_read < max_to_read && !socket_handler->shutdown_in_progress) {
         size_t iter_max_read = max_to_read - total_read;
-
+        printf("entering s_do_read function\n");
         struct aws_io_message *message = aws_channel_acquire_message_from_pool(
             socket_handler->slot->channel, AWS_IO_MESSAGE_APPLICATION_DATA, iter_max_read);
 
         if (!message) {
+            printf("first break\n");
             break;
         }
 
-        if (aws_socket_read(socket_handler->socket, &message->message_data, &read)) {
+    ;   int ret;
+        if ((ret = aws_socket_read(socket_handler->socket, &message->message_data, &read))) {
             aws_mem_release(message->allocator, message);
+            printf("second break: %d errno %d\n", ret, errno);
             break;
         }
 
+        printf("total read is %lu max_read is: %lu read is: %lu\n", total_read, max_to_read, read);
         total_read += read;
+
         AWS_LOGF_TRACE(
             AWS_LS_IO_SOCKET_HANDLER,
             "id=%p: read %llu from socket",
@@ -163,6 +170,7 @@ static void s_do_read(struct socket_handler *socket_handler) {
 
         if (aws_channel_slot_send_message(socket_handler->slot, message, AWS_CHANNEL_DIR_READ)) {
             aws_mem_release(message->allocator, message);
+            printf("third break\n");
             break;
         }
     }
@@ -178,8 +186,12 @@ static void s_do_read(struct socket_handler *socket_handler) {
     /* resubscribe as long as there's no error, just return if we're in a would block scenario. */
     if (total_read < max_to_read) {
         int last_error = aws_last_error();
+        printf("last error is %d -> %d\n", last_error, AWS_IO_READ_WOULD_BLOCK);
 
         if (last_error != AWS_IO_READ_WOULD_BLOCK && !socket_handler->shutdown_in_progress) {
+            AWS_LOGF_TRACE(AWS_LS_IO_SOCKET_HANDLER, "id=%p shutting down channel",
+               (void *)socket_handler->slot->handler );
+
             aws_channel_shutdown(socket_handler->slot->channel, last_error);
         }
 
@@ -212,12 +224,14 @@ static void s_on_readable_notification(struct aws_socket *socket, int error_code
     (void)socket;
 
     struct socket_handler *socket_handler = user_data;
-    AWS_LOGF_TRACE(AWS_LS_IO_SOCKET_HANDLER, "id=%p: socket is now readable", (void *)socket_handler->slot->handler);
+    AWS_LOGF_TRACE(AWS_LS_IO_SOCKET_HANDLER, "id=%p: socket is now readable: error_codde: %d", (void *)socket_handler->slot->handler, error_code);
 
     /* read regardless so we can pick up data that was sent prior to the close. For example, peer sends a TLS ALERT
      * then immediately closes the socket. On some platforms, we'll never see the readable flag. So we want to make
      * sure we read the ALERT, otherwise, we'll end up telling the user that the channel shutdown because of a socket
      * closure, when in reality it was a TLS error */
+    printf("s_on_readable_notification entering\n");
+    AWS_LOGF_TRACE(AWS_LS_IO_SOCKET_HANDLER, " caling s_do_read from s_on_readable_notification");
     s_do_read(socket_handler);
 
     if (error_code && !socket_handler->shutdown_in_progress) {
@@ -230,6 +244,7 @@ static void s_read_task(struct aws_channel_task *task, void *arg, aws_task_statu
     task->task_fn = NULL;
     task->arg = NULL;
 
+	AWS_LOGF_TRACE(AWS_LS_IO_SOCKET_HANDLER, " caling s_read_task");
     if (status == AWS_TASK_STATUS_RUN_READY) {
         struct socket_handler *socket_handler = arg;
         s_do_read(socket_handler);
@@ -358,6 +373,8 @@ static void s_gather_statistics(struct aws_channel_handler *handler, struct aws_
 static void s_trigger_read(struct aws_channel_handler *handler) {
     struct socket_handler *socket_handler = (struct socket_handler *)handler->impl;
 
+  //  printf("s_trigger read do \n");
+    AWS_LOGF_TRACE(AWS_LS_IO_SOCKET_HANDLER, " caling s_do_read from s_trigger_read");
     s_do_read(socket_handler);
 }
 
@@ -402,7 +419,7 @@ struct aws_channel_handler *aws_socket_handler_new(
     if (aws_crt_statistics_socket_init(&impl->stats)) {
         goto cleanup_handler;
     }
-
+    printf("-------------------------> setting up s_socket_process_write_message handler %p\n", handler);
     AWS_LOGF_DEBUG(
         AWS_LS_IO_SOCKET_HANDLER,
         "id=%p: Socket handler created with max_read_size of %llu",
