@@ -181,7 +181,7 @@ static void s_do_read(struct socket_handler *socket_handler) {
 
         if (last_error != AWS_IO_READ_WOULD_BLOCK && !socket_handler->shutdown_in_progress) {
             AWS_LOGF_TRACE(
-                    AWS_LS_IO_SOCKET_HANDLER, "id=%p shutting down channel", (void *)socket_handler->slot->handler );
+                AWS_LS_IO_SOCKET_HANDLER, "id=%p shutting down channel", (void *)socket_handler->slot->handler );
 
             aws_channel_shutdown(socket_handler->slot->channel, last_error);
         }
@@ -216,10 +216,10 @@ static void s_on_readable_notification(struct aws_socket *socket, int error_code
 
     struct socket_handler *socket_handler = user_data;
     AWS_LOGF_TRACE(
-            AWS_LS_IO_SOCKET_HANDLER,
-            "id=%p: socket is now readable: error_codde: %d",
-            (void *)socket_handler->slot->handler,
-            error_code);
+        AWS_LS_IO_SOCKET_HANDLER,
+        "id=%p: socket is now readable: error_codde: %d",
+        (void *)socket_handler->slot->handler,
+        error_code);
 
     /* read regardless so we can pick up data that was sent prior to the close. For example, peer sends a TLS ALERT
      * then immediately closes the socket. On some platforms, we'll never see the readable flag. So we want to make
