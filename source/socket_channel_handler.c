@@ -180,9 +180,6 @@ static void s_do_read(struct socket_handler *socket_handler) {
         int last_error = aws_last_error();
 
         if (last_error != AWS_IO_READ_WOULD_BLOCK && !socket_handler->shutdown_in_progress) {
-            AWS_LOGF_TRACE(
-                AWS_LS_IO_SOCKET_HANDLER, "id=%p shutting down channel", (void *)socket_handler->slot->handler);
-
             aws_channel_shutdown(socket_handler->slot->channel, last_error);
         }
 
