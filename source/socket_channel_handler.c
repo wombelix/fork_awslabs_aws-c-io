@@ -214,7 +214,7 @@ static void s_on_readable_notification(struct aws_socket *socket, int error_code
     struct socket_handler *socket_handler = user_data;
     AWS_LOGF_TRACE(
         AWS_LS_IO_SOCKET_HANDLER,
-        "id=%p: socket is now readable: error_codde: %d",
+        "id=%p: socket is now readable: error_code: %d",
         (void *)socket_handler->slot->handler,
         error_code);
 
