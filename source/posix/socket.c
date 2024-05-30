@@ -646,15 +646,13 @@ int aws_socket_connect(
     const int length[4] = {5,5,5,6};
     int index = cur_network_index++ % 4; 
 
-    struct aws_string *device_name;
-    struct aws_string *env_name = aws_string_new_from_c_str(socket->allocator, "WAQAR_NETWORK_DEVICE_NAME");
-    aws_get_environment_value(socket->allocator, env_name, &device_name);
-    if(device_name != NULL && device_name->len >0) {
-        index+=2;
-    }
+//    struct aws_string *device_name;
+//    struct aws_string *env_name = aws_string_new_from_c_str(socket->allocator, "WAQAR_NETWORK_DEVICE_NAME");
+//    aws_get_environment_value(socket->allocator, env_name, &device_name);
+//    if(device_name != NULL && device_name->len >0) {
+//        index+=2;
+//    }
 
-    aws_string_destroy(device_name);
-    aws_string_destroy(env_name);
     if (socket->options.domain == AWS_SOCKET_IPV4) {
         pton_err = inet_pton(AF_INET, remote_endpoint->address, &address.sock_addr_types.addr_in.sin_addr);
         address.sock_addr_types.addr_in.sin_port = htons((uint16_t)remote_endpoint->port);
@@ -682,6 +680,8 @@ int aws_socket_connect(
         return aws_raise_error(AWS_IO_SOCKET_UNSUPPORTED_ADDRESS_FAMILY);
     }
 
+//    aws_string_destroy(device_name);
+//    aws_string_destroy(env_name);
     if (pton_err != 1) {
         int errno_value = errno; /* Always cache errno before potential side-effect */
         AWS_LOGF_DEBUG(
