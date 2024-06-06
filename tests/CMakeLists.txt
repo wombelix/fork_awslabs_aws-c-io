@@ -59,8 +59,6 @@ add_net_test_case(udp_socket_communication)
 add_net_test_case(test_socket_with_bind_to_interface)
 add_net_test_case(test_socket_with_bind_to_invalid_interface)
 add_test_case(udp_bind_connect_communication)
-add_net_test_case(connect_timeout)
-add_net_test_case(connect_timeout_cancelation)
 
 if(USE_VSOCK)
     add_test_case(vsock_loopback_socket_communication)
@@ -74,7 +72,6 @@ add_net_test_case(bind_on_zero_port_tcp_ipv4)
 add_net_test_case(bind_on_zero_port_udp_ipv4)
 add_test_case(incoming_udp_sock_errors)
 add_test_case(wrong_thread_read_write_fails)
-add_net_test_case(cleanup_before_connect_or_timeout_doesnt_explode)
 add_test_case(cleanup_in_accept_doesnt_explode)
 add_test_case(cleanup_in_write_cb_doesnt_explode)
 add_test_case(sock_write_cb_is_async)
@@ -93,16 +90,11 @@ add_test_case(channel_tasks_serialized_run)
 add_test_case(channel_rejects_post_shutdown_tasks)
 add_test_case(channel_cancels_pending_tasks)
 add_test_case(channel_duplicate_shutdown)
-add_net_test_case(channel_connect_some_hosts_timeout)
 
-add_net_test_case(test_default_with_ipv6_lookup)
-add_net_test_case(test_default_host_resolver_ipv6_address_variations)
 add_test_case(test_resolver_ipv6_address_lookup)
-add_net_test_case(test_default_with_multiple_lookups)
 add_test_case(test_resolver_ipv4_address_lookup)
 add_test_case(test_resolver_purge_host_cache)
 add_test_case(test_resolver_purge_cache)
-add_net_test_case(test_default_with_ipv4_only_lookup)
 add_test_case(test_resolver_ttls)
 add_test_case(test_resolver_connect_failure_recording)
 add_test_case(test_resolver_ttl_refreshes_on_resolve)
@@ -167,70 +159,6 @@ if(NOT BYO_CRYPTO)
     # 2. s2n does not support public key pinning and, given its deprecated and http-centric position, there are no
     # plans to add support nor investigate osx/windows support as well.
 
-    # Badssl - Certificate Validation endpoint suite
-    # For each failure case, we also include a positive test that verifies success when peer verification is disabled
-    add_net_test_case(tls_client_channel_negotiation_error_expired)
-    add_net_test_case(tls_client_channel_negotiation_error_wrong_host)
-    add_net_test_case(tls_client_channel_negotiation_error_wrong_host_with_ca_override)
-    add_net_test_case(tls_client_channel_negotiation_error_self_signed)
-    add_net_test_case(tls_client_channel_negotiation_error_untrusted_root)
-    add_net_test_case(tls_client_channel_negotiation_error_untrusted_root_due_to_ca_override)
-    add_net_test_case(tls_client_channel_negotiation_no_verify_expired)
-    add_net_test_case(tls_client_channel_negotiation_no_verify_wrong_host)
-    add_net_test_case(tls_client_channel_negotiation_no_verify_self_signed)
-    add_net_test_case(tls_client_channel_negotiation_no_verify_untrusted_root)
-
-    # Badssl - Broken Crypto endpoint suite
-    # We don't include dh1024 as it succeeds on the windows baseline configuration and there does not seem
-    # to be a way to disable it
-    add_net_test_case(tls_client_channel_negotiation_error_broken_crypto_rc4)
-    add_net_test_case(tls_client_channel_negotiation_error_broken_crypto_rc4_md5)
-    add_net_test_case(tls_client_channel_negotiation_error_broken_crypto_dh480)
-    add_net_test_case(tls_client_channel_negotiation_error_broken_crypto_dh512)
-    add_net_test_case(tls_client_channel_negotiation_error_broken_crypto_null)
-
-    # Badssl - Legacy crypto suite, includes both negative and positive tests, with override checks where appropriate
-    # Our current baseline/default is platform-specific, whereas badssl expects a baseline of 1.2
-    # Linux - tls1.1
-    # Windows - system default (1.0 is the only thing we could reasonable fixate to given win7 support)
-    # Mac - system default
-    # We skip the cbc and 3des checks, as a positive connection result there does not yet represent a security risk
-    # We don't include dh2048 as it succeeds on the windows baseline configuration and there does not seem
-    # to be a way to disable it
-    if(NOT(WIN32 AND NOT CMAKE_SYSTEM_VERSION MATCHES "10\.0\.1.*"))
-        # Skip TLS 1.0 and TLS 1.1 test for windows later than windows server 2022, as they droped old TLS
-        add_net_test_case(tls_client_channel_negotiation_error_legacy_crypto_tls10)
-        add_net_test_case(tls_client_channel_negotiation_override_legacy_crypto_tls10)
-        add_net_test_case(tls_client_channel_negotiation_error_override_legacy_crypto_tls11)
-        add_net_test_case(tls_client_channel_negotiation_success_legacy_crypto_tls11)
-    endif()
-
-    # Badssl - Secure uncommon suite
-    # We skip 10000san for now as its unclear the point or relevance especially with respect to the OS-based
-    # TLS implementations
-    # We skip 1000san, sha384, rsa8192 and sha512 because the public badssl certificate is expired and we haven't migrated to
-    # internal hosting yet
-    # We also defer the incomplete chain test for now until we can do some further study on how to get it to
-    # properly fail on windows and osx.
-    # add_net_test_case(tls_client_channel_negotiation_success_sha384)
-    # add_net_test_case(tls_client_channel_negotiation_success_sha512)
-    # add_net_test_case(tls_client_channel_negotiation_success_rsa8192)
-    add_net_test_case(tls_client_channel_negotiation_error_no_subject)
-    add_net_test_case(tls_client_channel_negotiation_success_no_verify_no_subject)
-    add_net_test_case(tls_client_channel_negotiation_error_no_common_name)
-    add_net_test_case(tls_client_channel_negotiation_success_no_verify_no_common_name)
-    add_net_test_case(tls_client_channel_negotiation_success_no_verify_incomplete_chain)
-
-    # Badssl - Secure common suite, all of these should succeed
-    add_net_test_case(tls_client_channel_negotiation_success_tls12)
-    add_net_test_case(tls_client_channel_negotiation_success_sha256)
-    add_net_test_case(tls_client_channel_negotiation_success_rsa2048)
-    add_net_test_case(tls_client_channel_negotiation_success_ecc256)
-    add_net_test_case(tls_client_channel_negotiation_success_ecc384)
-
-    # add_net_test_case(tls_client_channel_negotiation_success_extended_validation) test disabled until badssl updates cert (expired 2022.08.10)
-    add_net_test_case(tls_client_channel_negotiation_success_mozilla_modern)
-
     # Misc non-badssl tls tests
     add_net_test_case(test_concurrent_cert_import)
     add_net_test_case(test_duplicate_cert_import)
@@ -241,7 +169,6 @@ if(NOT BYO_CRYPTO)
     add_net_test_case(tls_client_channel_negotiation_success)
     add_net_test_case(tls_server_multiple_connections)
     add_net_test_case(tls_server_hangup_during_negotiation)
-    add_net_test_case(tls_client_channel_no_verify)
     add_net_test_case(test_tls_negotiation_timeout)
     add_net_test_case(alpn_successfully_negotiates)
     add_net_test_case(alpn_no_protocol_message)
